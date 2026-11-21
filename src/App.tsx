@@ -17,6 +17,7 @@ import {
   MapPin,
   Maximize2,
   MessageCircle,
+  Palette,
   PenTool,
   Phone,
   Printer,
@@ -29,6 +30,7 @@ import Navbar, { type ProfileTab } from './components/Navbar';
 import CVModal from './components/CVModal';
 import PrintCVSheet from './components/PrintCVSheet';
 import { initialCVData } from './data/cvData';
+import { portfolioThemes, type ThemeId } from './theme/palettes';
 
 type SkillFilter = 'All' | 'Computer Skills' | 'Specialization' | 'Languages';
 
@@ -45,6 +47,16 @@ const profileTabs: { id: ProfileTab; label: string }[] = [
 
 export default function App() {
   const cv = initialCVData;
+  const [themeId, setThemeId] = useState<ThemeId>(() => {
+    try {
+      const saved = localStorage.getItem('rafi_portfolio_it_theme') as ThemeId | null;
+      return saved && saved in portfolioThemes ? saved : 'itpro';
+    } catch {
+      return 'itpro';
+    }
+  });
+  const theme = portfolioThemes[themeId];
+
   const [activeTab, setActiveTab] = useState<ProfileTab>('timeline');
   const [cvModalOpen, setCvModalOpen] = useState(false);
   const [cvModalTab, setCvModalTab] = useState<'pdf' | 'print'>('print');
@@ -60,13 +72,20 @@ export default function App() {
   const [formFeedback, setFormFeedback] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<'email' | 'phone' | null>(null);
 
-  // Smooth top scroll progress bar
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 180,
     damping: 28,
     restDelta: 0.001,
   });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('rafi_portfolio_it_theme', themeId);
+    } catch {
+      // Ignore storage failures in restricted frames
+    }
+  }, [themeId]);
 
   useEffect(() => {
     if (!lightboxImage) return;
@@ -88,7 +107,7 @@ export default function App() {
       setCopiedField(field);
       setTimeout(() => setCopiedField((prev) => (prev === field ? null : prev)), 2000);
     } catch {
-      // Clipboard fallback ignored if blocked by permissions
+      // Clipboard fallback ignored if blocked
     }
   };
 
@@ -193,7 +212,7 @@ export default function App() {
     subtitle: string;
     icon: React.ReactNode;
   }) => (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-800/80 pb-4">
+    <div className={`flex items-start justify-between gap-4 border-b pb-4 ${theme.divider}`}>
       <div className="flex items-center gap-3.5">
         <motion.button
           type="button"
@@ -206,7 +225,7 @@ export default function App() {
               caption: `${cv.name} — IT Support Specialist`,
             })
           }
-          className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-slate-600/80 bg-white cursor-pointer ring-2 ring-sky-400/20"
+          className={`h-11 w-11 shrink-0 overflow-hidden rounded-full border bg-white cursor-pointer ring-2 ${theme.border}`}
           aria-label="View profile photograph"
         >
           {cv.photoUrl && (
@@ -219,11 +238,11 @@ export default function App() {
           )}
         </motion.button>
         <div>
-          <h3 className="text-base font-bold text-white leading-snug">{title}</h3>
-          <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
+          <h3 className={`text-base font-bold leading-snug ${theme.textPrimary}`}>{title}</h3>
+          <p className={`mt-0.5 text-xs ${theme.textMuted}`}>{subtitle}</p>
         </div>
       </div>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700/70 bg-[#111A2E] text-sky-400">
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${theme.iconBox}`}>
         {icon}
       </div>
     </div>
@@ -233,16 +252,16 @@ export default function App() {
     const liked = !!likedPosts[postId];
     const saved = !!savedPosts[postId];
     return (
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-3.5 text-xs">
+      <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-3.5 text-xs ${theme.divider}`}>
         <div className="flex items-center gap-2">
           <motion.button
             type="button"
             whileTap={{ scale: 0.94 }}
             onClick={() => toggleLike(postId)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors cursor-pointer border ${
               liked
-                ? 'bg-sky-500/15 text-sky-300 border border-sky-400/35'
-                : 'text-slate-300 hover:bg-white/5 hover:text-white border border-transparent'
+                ? theme.endorseActive
+                : `${theme.textSecondary} border-transparent hover:bg-black/5 dark:hover:bg-white/5`
             }`}
           >
             <ThumbsUp className="h-3.5 w-3.5" />
@@ -253,10 +272,10 @@ export default function App() {
             type="button"
             whileTap={{ scale: 0.94 }}
             onClick={() => toggleSave(postId)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors cursor-pointer border ${
               saved
-                ? 'bg-sky-500/15 text-sky-300 border border-sky-400/35'
-                : 'text-slate-300 hover:bg-white/5 hover:text-white border border-transparent'
+                ? theme.endorseActive
+                : `${theme.textSecondary} border-transparent hover:bg-black/5 dark:hover:bg-white/5`
             }`}
           >
             <Bookmark className="h-3.5 w-3.5" />
@@ -267,7 +286,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => handleOpenModal('pdf')}
-          className="inline-flex items-center gap-1.5 text-slate-400 transition-colors hover:text-sky-300 cursor-pointer"
+          className={`inline-flex items-center gap-1.5 transition-colors cursor-pointer ${theme.textMuted} hover:underline`}
         >
           <Eye className="h-3.5 w-3.5" />
           Verify in Original CV
@@ -278,27 +297,27 @@ export default function App() {
 
   return (
     <>
-      <div className="no-print min-h-screen bg-[#04070D] text-slate-100">
+      <div className={`no-print min-h-screen transition-colors duration-300 ${theme.canvas}`}>
         {/* Scroll Progress Bar */}
         <motion.div
           style={{ scaleX, transformOrigin: '0%' }}
-          className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-gradient-to-r from-sky-500 via-sky-300 to-white"
+          className={`fixed top-0 left-0 right-0 z-50 h-[3px] bg-gradient-to-r ${theme.progressGradient}`}
         />
 
-        <Navbar onOpenCVModal={handleOpenModal} onSelectNav={handleSelectNav} />
+        <Navbar theme={theme} onOpenCVModal={handleOpenModal} onSelectNav={handleSelectNav} />
 
         {/* Facebook-Style Executive Profile Header */}
         <section
           id="profile-header"
-          className="border-b border-slate-800/80 bg-[#0B111E]"
+          className={`border-b transition-colors duration-300 ${theme.card}`}
         >
           <div className="mx-auto max-w-6xl">
-            {/* Tailored IT Support & Network Lab Cover Photo with Subtle Motion */}
+            {/* Tailored IT Support & Network Lab Cover Photo */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="relative h-56 sm:h-72 lg:h-[340px] w-full overflow-hidden rounded-b-2xl border-x border-b border-slate-800/90 bg-[#050811]"
+              className={`relative h-56 sm:h-72 lg:h-[340px] w-full overflow-hidden rounded-b-2xl border-x border-b ${theme.border}`}
             >
               <motion.img
                 src={COVER_BANNER_PATH}
@@ -309,7 +328,7 @@ export default function App() {
                 transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
                 className="h-full w-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#04070D]/95 via-[#0B111E]/35 to-transparent" />
+              <div className={`absolute inset-0 bg-gradient-to-t ${theme.coverScrim}`} />
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.03 }}
@@ -320,18 +339,17 @@ export default function App() {
                     caption: 'IT Support & Network Lab Workstation Cover',
                   })
                 }
-                className="absolute right-4 bottom-4 inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-[#070B14]/80 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-[#0F172A] cursor-pointer"
+                className="absolute right-4 bottom-4 inline-flex items-center gap-1.5 rounded-lg border border-white/25 bg-black/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
               >
-                <Maximize2 className="h-3.5 w-3.5 text-sky-300" />
+                <Maximize2 className="h-3.5 w-3.5" />
                 View Cover
               </motion.button>
             </motion.div>
 
             {/* Overlapping Circular Profile Picture + Name + Actions */}
-            <div className="px-6 pb-6">
+            <div className="px-6 pb-5">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left gap-5">
-                  {/* Executive Circular Avatar overlapping cover photo */}
                   <motion.div
                     initial={{ opacity: 0, y: 24, scale: 0.92 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -350,7 +368,7 @@ export default function App() {
                         })
                       }
                       aria-label="Enlarge Rafi Rahman profile photograph"
-                      className="group relative block h-36 w-36 sm:h-44 sm:w-44 overflow-hidden rounded-full border-4 border-[#0B111E] bg-white shadow-2xl ring-2 ring-sky-400/50 cursor-pointer"
+                      className={`group relative block h-36 w-36 sm:h-44 sm:w-44 overflow-hidden rounded-full border-4 bg-white shadow-2xl ring-2 cursor-pointer ${theme.avatarRing}`}
                     >
                       {cv.photoUrl && (
                         <img
@@ -360,7 +378,7 @@ export default function App() {
                           className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
                         />
                       )}
-                      <span className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-slate-950/75 py-1.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <span className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/75 py-1.5 text-[11px] font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                         View Photo
                       </span>
                     </motion.button>
@@ -373,39 +391,39 @@ export default function App() {
                     transition={{ duration: 0.45, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
                     className="pb-1"
                   >
-                    <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                    <h1 className={`text-3xl font-extrabold tracking-tight sm:text-4xl ${theme.textPrimary}`}>
                       {cv.name}
                     </h1>
-                    <p className="mt-1 text-sm font-medium text-sky-400 sm:text-base">
+                    <p className={`mt-1 text-sm font-semibold sm:text-base ${theme.accentText}`}>
                       {cv.roleTitle}
                     </p>
-                    <div className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-xs sm:text-sm text-slate-300">
+                    <div className={`mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-xs sm:text-sm ${theme.textSecondary}`}>
                       <a
                         href={gmailComposeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-slate-200 underline decoration-sky-400/50 underline-offset-4 transition-colors hover:text-sky-300"
+                        className={`inline-flex items-center gap-1.5 underline underline-offset-4 transition-colors ${theme.accentLink}`}
                       >
-                        <Mail className="h-3.5 w-3.5 text-sky-400" />
+                        <Mail className={`h-3.5 w-3.5 ${theme.accentText}`} />
                         {cv.contact.email}
                       </a>
-                      <span aria-hidden="true" className="text-slate-600">
+                      <span aria-hidden="true" className={theme.textMuted}>
                         &middot;
                       </span>
                       <a
                         href={whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-slate-200 underline decoration-sky-400/50 underline-offset-4 transition-colors hover:text-sky-300 tabular-nums"
+                        className={`inline-flex items-center gap-1.5 underline underline-offset-4 transition-colors tabular-nums ${theme.accentLink}`}
                       >
-                        <MessageCircle className="h-3.5 w-3.5 text-sky-400" />
+                        <MessageCircle className={`h-3.5 w-3.5 ${theme.accentText}`} />
                         {cv.contact.phone}
                       </a>
-                      <span aria-hidden="true" className="text-slate-600">
+                      <span aria-hidden="true" className={theme.textMuted}>
                         &middot;
                       </span>
                       <span className="inline-flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 text-sky-400" />
+                        <MapPin className={`h-3.5 w-3.5 ${theme.accentText}`} />
                         {cv.contact.address}
                       </span>
                     </div>
@@ -424,7 +442,7 @@ export default function App() {
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={handleDownloadPdf}
-                    className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-950 transition-colors hover:bg-slate-200 whitespace-nowrap shrink-0 cursor-pointer"
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${theme.primaryBtn}`}
                   >
                     <Download className="h-4 w-4" />
                     Download CV PDF
@@ -436,9 +454,9 @@ export default function App() {
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-700/80 bg-[#111A2E] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:border-sky-400/50 hover:bg-[#17233D] whitespace-nowrap shrink-0"
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${theme.secondaryBtn}`}
                   >
-                    <MessageCircle className="h-4 w-4 text-sky-400" />
+                    <MessageCircle className={`h-4 w-4 ${theme.accentText}`} />
                     WhatsApp
                   </motion.a>
 
@@ -448,9 +466,9 @@ export default function App() {
                     href={gmailComposeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-700/80 bg-[#111A2E] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:border-sky-400/50 hover:bg-[#17233D] whitespace-nowrap shrink-0"
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${theme.secondaryBtn}`}
                   >
-                    <Mail className="h-4 w-4 text-sky-400" />
+                    <Mail className={`h-4 w-4 ${theme.accentText}`} />
                     Gmail
                   </motion.a>
 
@@ -459,7 +477,7 @@ export default function App() {
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => handleOpenModal('pdf')}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-700/80 bg-transparent px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-200 transition-colors hover:bg-white/5 hover:text-white whitespace-nowrap shrink-0 cursor-pointer"
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${theme.ghostBtn}`}
                   >
                     <Eye className="h-4 w-4" />
                     View CV
@@ -467,39 +485,75 @@ export default function App() {
                 </motion.div>
               </div>
 
-              {/* Facebook-Style Animated Profile Tabs Bar */}
+              {/* Facebook-Style Animated Profile Tabs + Color Theme Switcher */}
               <div
                 id="profile-tabs"
-                role="tablist"
-                aria-label="Portfolio profile sections"
-                className="mt-7 flex items-center gap-1 overflow-x-auto border-t border-slate-800/80 pt-2"
+                className={`mt-7 flex flex-col gap-3 border-t pt-2 md:flex-row md:items-center md:justify-between ${theme.divider}`}
               >
-                {profileTabs.map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      role="tab"
-                      aria-selected={isActive}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`relative px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer rounded-lg ${
-                        isActive
-                          ? 'text-sky-400'
-                          : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      {tab.label}
-                      {isActive && (
-                        <motion.span
-                          layoutId="fbProfileTabIndicator"
-                          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                          className="absolute inset-x-2 bottom-0 h-[3px] rounded-full bg-sky-400"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+                <div
+                  role="tablist"
+                  aria-label="Portfolio profile sections"
+                  className="flex items-center gap-1 overflow-x-auto"
+                >
+                  {profileTabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        role="tab"
+                        aria-selected={isActive}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`relative px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer rounded-lg ${
+                          isActive ? theme.activeTabText : `${theme.textSecondary} hover:opacity-80`
+                        }`}
+                      >
+                        {tab.label}
+                        {isActive && (
+                          <motion.span
+                            layoutId="fbProfileTabIndicator"
+                            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                            className={`absolute inset-x-2 bottom-0 h-[3px] rounded-full ${theme.accentBar}`}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Interactive Theme Color Switcher */}
+                <div className="flex items-center gap-2 pb-2 md:pb-0 shrink-0">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${theme.textMuted}`}>
+                    <Palette className="h-3.5 w-3.5" />
+                    Theme:
+                  </span>
+                  <div className={`inline-flex items-center gap-1 rounded-lg border p-1 ${theme.inset}`}>
+                    {(Object.keys(portfolioThemes) as ThemeId[]).map((id) => {
+                      const item = portfolioThemes[id];
+                      const selected = themeId === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setThemeId(id)}
+                          aria-pressed={selected}
+                          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                            selected
+                              ? theme.activeSkillTab
+                              : `${theme.textMuted} hover:opacity-90`
+                          }`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="h-2.5 w-2.5 rounded-full border border-white/25"
+                            style={{ backgroundColor: item.swatch }}
+                          />
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -515,38 +569,38 @@ export default function App() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6"
+                className={`rounded-2xl border p-6 transition-colors duration-300 ${theme.card}`}
               >
-                <h2 className="text-lg font-bold text-white">Intro</h2>
-                <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                <h2 className={`text-lg font-bold ${theme.textPrimary}`}>Intro</h2>
+                <p className={`mt-3 text-sm leading-relaxed ${theme.textSecondary}`}>
                   {cv.careerObjective}
                 </p>
 
-                <ul className="mt-5 space-y-3 border-t border-slate-800/80 pt-4 text-sm text-slate-200">
+                <ul className={`mt-5 space-y-3 border-t pt-4 text-sm ${theme.divider} ${theme.textSecondary}`}>
                   <li className="flex items-start gap-3">
-                    <Briefcase className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                    <Briefcase className={`mt-0.5 h-4 w-4 shrink-0 ${theme.accentText}`} />
                     <span>
                       IT Lab Assistant (Asset project &amp; SICIP project) at{' '}
-                      <strong className="text-white">The Everest IT</strong>
+                      <strong className={theme.textPrimary}>The Everest IT</strong>
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <Award className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                    <Award className={`mt-0.5 h-4 w-4 shrink-0 ${theme.accentText}`} />
                     <span>NSDA Certified IT Support Service Level-3</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                    <GraduationCap className={`mt-0.5 h-4 w-4 shrink-0 ${theme.accentText}`} />
                     <span>
                       Bachelor of Arts (B.A) &middot;{' '}
-                      <strong className="text-white">National University</strong> (CGPA: 2.63)
+                      <strong className={theme.textPrimary}>National University</strong> (CGPA: 2.63)
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                    <MapPin className={`mt-0.5 h-4 w-4 shrink-0 ${theme.accentText}`} />
                     <span>Lives in {cv.contact.address}</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <User className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                    <User className={`mt-0.5 h-4 w-4 shrink-0 ${theme.accentText}`} />
                     <span>
                       Permanent Address: Vill: West Charbata, P.O: Char Bata (3813), P.S:
                       Subornochar
@@ -554,19 +608,19 @@ export default function App() {
                   </li>
                 </ul>
 
-                <div className="mt-5 grid grid-cols-2 gap-2.5 border-t border-slate-800/80 pt-4">
+                <div className={`mt-5 grid grid-cols-2 gap-2.5 border-t pt-4 ${theme.divider}`}>
                   <button
                     type="button"
                     onClick={() => handleOpenModal('print')}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700/80 bg-[#111A2E] px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-sky-400/50 hover:bg-[#17233D] cursor-pointer"
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${theme.secondaryBtn}`}
                   >
-                    <FileText className="h-3.5 w-3.5 text-sky-400" />
+                    <FileText className={`h-3.5 w-3.5 ${theme.accentText}`} />
                     Print-Friendly CV
                   </button>
                   <button
                     type="button"
                     onClick={handlePrintCV}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700/80 bg-transparent px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-white/5 cursor-pointer"
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${theme.ghostBtn}`}
                   >
                     <Printer className="h-3.5 w-3.5" />
                     Print Now
@@ -574,20 +628,22 @@ export default function App() {
                 </div>
               </motion.section>
 
-              {/* Featured Profile Photo & Languages/Hobbies Card */}
+              {/* Featured Photos, Languages & Hobbies Card */}
               <motion.section
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6 space-y-6"
+                className={`rounded-2xl border p-6 space-y-6 transition-colors duration-300 ${theme.card}`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-base font-bold text-white">Photos &amp; Workspace</h2>
+                    <h2 className={`text-base font-bold ${theme.textPrimary}`}>
+                      Photos &amp; Workspace
+                    </h2>
                     <button
                       type="button"
                       onClick={() => handleOpenModal('pdf')}
-                      className="text-xs font-medium text-sky-400 hover:text-sky-300 cursor-pointer"
+                      className={`text-xs font-semibold cursor-pointer ${theme.accentText} hover:underline`}
                     >
                       Open PDF
                     </button>
@@ -602,7 +658,7 @@ export default function App() {
                           caption: `${cv.name} — Original CV Photograph`,
                         })
                       }
-                      className="group relative aspect-square overflow-hidden rounded-xl border border-slate-700/80 bg-white cursor-pointer"
+                      className={`group relative aspect-square overflow-hidden rounded-xl border bg-white cursor-pointer ${theme.border}`}
                     >
                       {cv.photoUrl && (
                         <img
@@ -621,7 +677,7 @@ export default function App() {
                           caption: 'IT Support Specialist & Network Lab Workstation',
                         })
                       }
-                      className="group relative aspect-square overflow-hidden rounded-xl border border-slate-700/80 bg-[#070B14] cursor-pointer"
+                      className={`group relative aspect-square overflow-hidden rounded-xl border cursor-pointer ${theme.inset}`}
                     >
                       <img
                         src={COVER_BANNER_PATH}
@@ -633,22 +689,22 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-800/80 pt-5">
-                  <div className="flex items-center gap-2 text-sm font-bold text-white">
-                    <Languages className="h-4 w-4 text-sky-400" />
+                <div className={`border-t pt-5 ${theme.divider}`}>
+                  <div className={`flex items-center gap-2 text-sm font-bold ${theme.textPrimary}`}>
+                    <Languages className={`h-4 w-4 ${theme.accentText}`} />
                     <h3>Languages</h3>
                   </div>
-                  <p className="mt-2 text-sm text-slate-300">
+                  <p className={`mt-2 text-sm ${theme.textSecondary}`}>
                     {cv.languages.map((l) => l.name).join(' · ')}
                   </p>
                 </div>
 
-                <div className="border-t border-slate-800/80 pt-5">
-                  <div className="flex items-center gap-2 text-sm font-bold text-white">
-                    <Heart className="h-4 w-4 text-sky-400" />
+                <div className={`border-t pt-5 ${theme.divider}`}>
+                  <div className={`flex items-center gap-2 text-sm font-bold ${theme.textPrimary}`}>
+                    <Heart className={`h-4 w-4 ${theme.accentText}`} />
                     <h3>Hobbies</h3>
                   </div>
-                  <ul className="mt-2 space-y-1.5 text-sm text-slate-300 list-disc pl-5">
+                  <ul className={`mt-2 space-y-1.5 text-sm list-disc pl-5 ${theme.textSecondary}`}>
                     {cv.hobbies.map((hobby, idx) => (
                       <li key={idx}>{hobby}</li>
                     ))}
@@ -676,36 +732,38 @@ export default function App() {
                       whileHover={{ y: -2 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.35 }}
-                      className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6 transition-colors hover:border-slate-700"
+                      className={`rounded-2xl border p-6 transition-colors ${theme.card} ${theme.cardHover}`}
                     >
                       <PostHeader
                         title="Career Objective"
                         subtitle={`${cv.name} · Pinned Profile Summary`}
                         icon={<User className="h-4 w-4" />}
                       />
-                      <p className="mt-4 text-sm sm:text-base leading-relaxed text-slate-200">
+                      <p className={`mt-4 text-sm sm:text-base leading-relaxed ${theme.textSecondary}`}>
                         {cv.careerObjective}
                       </p>
                       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <div className="rounded-xl border border-slate-800/90 bg-[#070B14] p-3">
-                          <p className="text-[11px] text-slate-400">Certification</p>
-                          <p className="mt-1 text-xs font-semibold text-white">
+                        <div className={`rounded-xl border p-3 ${theme.inset}`}>
+                          <p className={`text-[11px] ${theme.textMuted}`}>Certification</p>
+                          <p className={`mt-1 text-xs font-semibold ${theme.textPrimary}`}>
                             NSDA Level-3
                           </p>
                         </div>
-                        <div className="rounded-xl border border-slate-800/90 bg-[#070B14] p-3">
-                          <p className="text-[11px] text-slate-400">Degree</p>
-                          <p className="mt-1 text-xs font-semibold text-white">B.A (2.63)</p>
+                        <div className={`rounded-xl border p-3 ${theme.inset}`}>
+                          <p className={`text-[11px] ${theme.textMuted}`}>Degree</p>
+                          <p className={`mt-1 text-xs font-semibold ${theme.textPrimary}`}>
+                            B.A (2.63)
+                          </p>
                         </div>
-                        <div className="rounded-xl border border-slate-800/90 bg-[#070B14] p-3">
-                          <p className="text-[11px] text-slate-400">HSC / SSC</p>
-                          <p className="mt-1 text-xs font-semibold text-white tabular-nums">
+                        <div className={`rounded-xl border p-3 ${theme.inset}`}>
+                          <p className={`text-[11px] ${theme.textMuted}`}>HSC / SSC</p>
+                          <p className={`mt-1 text-xs font-semibold tabular-nums ${theme.textPrimary}`}>
                             3.67 / 2.83
                           </p>
                         </div>
-                        <div className="rounded-xl border border-slate-800/90 bg-[#070B14] p-3">
-                          <p className="text-[11px] text-slate-400">Experience</p>
-                          <p className="mt-1 text-xs font-semibold text-white tabular-nums">
+                        <div className={`rounded-xl border p-3 ${theme.inset}`}>
+                          <p className={`text-[11px] ${theme.textMuted}`}>Experience</p>
+                          <p className={`mt-1 text-xs font-semibold tabular-nums ${theme.textPrimary}`}>
                             4 Positions
                           </p>
                         </div>
@@ -724,7 +782,7 @@ export default function App() {
                         whileHover={{ y: -2 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.35, delay: index * 0.05 }}
-                        className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6 transition-colors hover:border-slate-700"
+                        className={`rounded-2xl border p-6 transition-colors ${theme.card} ${theme.cardHover}`}
                       >
                         <PostHeader
                           title={`${exp.designation} — ${exp.company}`}
@@ -735,7 +793,7 @@ export default function App() {
                           } · ${exp.location}`}
                           icon={<Briefcase className="h-4 w-4" />}
                         />
-                        <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-300 list-disc pl-5">
+                        <ul className={`mt-4 space-y-2 text-sm leading-relaxed list-disc pl-5 ${theme.textSecondary}`}>
                           {exp.responsibilities.map((resp, idx) => (
                             <li key={idx}>{resp}</li>
                           ))}
@@ -752,7 +810,7 @@ export default function App() {
                       whileHover={{ y: -2 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.35 }}
-                      className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6 transition-colors hover:border-slate-700"
+                      className={`rounded-2xl border p-6 transition-colors ${theme.card} ${theme.cardHover}`}
                     >
                       <PostHeader
                         title="Education & NSDA Certifications"
@@ -760,7 +818,9 @@ export default function App() {
                         icon={<GraduationCap className="h-4 w-4" />}
                       />
 
-                      <div className="mt-5 relative space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-slate-800">
+                      <div
+                        className={`mt-5 relative space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px ${theme.timelineLine}`}
+                      >
                         {cv.education.map((edu, idx) => (
                           <motion.div
                             key={edu.id}
@@ -772,21 +832,23 @@ export default function App() {
                           >
                             <span
                               aria-hidden="true"
-                              className="absolute left-0 top-1.5 h-[22px] w-[22px] rounded-full border border-sky-400/50 bg-[#111A2E] flex items-center justify-center"
+                              className={`absolute left-0 top-1.5 h-[22px] w-[22px] rounded-full border flex items-center justify-center ${theme.timelineDotBorder}`}
                             >
-                              <span className="h-2 w-2 rounded-full bg-sky-400" />
+                              <span className={`h-2 w-2 rounded-full ${theme.timelineDotFill}`} />
                             </span>
-                            <div className="rounded-xl border border-slate-800/90 bg-[#070B14] p-4">
+                            <div className={`rounded-xl border p-4 ${theme.inset}`}>
                               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                                <h4 className="text-sm font-bold text-white">{edu.title}</h4>
-                                <span className="font-mono text-xs text-sky-300 tabular-nums">
+                                <h4 className={`text-sm font-bold ${theme.textPrimary}`}>
+                                  {edu.title}
+                                </h4>
+                                <span className={`font-mono text-xs tabular-nums ${theme.accentText}`}>
                                   {edu.passingYear}
                                 </span>
                               </div>
-                              <p className="mt-1 text-xs text-slate-300">
+                              <p className={`mt-1 text-xs ${theme.textSecondary}`}>
                                 {edu.boardOrAuthority} &middot; {edu.groupOrSubject}
                               </p>
-                              <p className="mt-2 font-mono text-xs font-semibold text-white tabular-nums">
+                              <p className={`mt-2 font-mono text-xs font-semibold tabular-nums ${theme.textPrimary}`}>
                                 {edu.result}
                               </p>
                             </div>
@@ -806,7 +868,7 @@ export default function App() {
                       whileHover={{ y: -2 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.35 }}
-                      className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6 transition-colors hover:border-slate-700"
+                      className={`rounded-2xl border p-6 transition-colors ${theme.card} ${theme.cardHover}`}
                     >
                       <PostHeader
                         title="Computer Skills, Specialization & Languages"
@@ -814,11 +876,11 @@ export default function App() {
                         icon={<Award className="h-4 w-4" />}
                       />
 
-                      <div className="mt-4 rounded-xl border border-slate-800/90 bg-[#070B14] p-4">
-                        <p className="text-xs font-semibold text-sky-400">
+                      <div className={`mt-4 rounded-xl border p-4 ${theme.inset}`}>
+                        <p className={`text-xs font-semibold ${theme.accentText}`}>
                           Computer Skill (Verbatim)
                         </p>
-                        <p className="mt-1.5 text-sm leading-relaxed text-slate-200">
+                        <p className={`mt-1.5 text-sm leading-relaxed ${theme.textSecondary}`}>
                           MS Office (Word, Excel, PowerPoint), Computer Fundamentals, Hardware &amp;
                           Software Troubleshooting, CCTV &amp; Surveillance Operations, Internet
                           Applications &amp; Network Basics.
@@ -828,7 +890,7 @@ export default function App() {
                       <div
                         role="tablist"
                         aria-label="Filter skills by category"
-                        className="mt-5 inline-flex flex-wrap items-center gap-1 rounded-lg border border-slate-800 bg-[#070B14] p-1"
+                        className={`mt-5 inline-flex flex-wrap items-center gap-1 rounded-lg border p-1 ${theme.inset}`}
                       >
                         {(
                           ['All', 'Computer Skills', 'Specialization', 'Languages'] as SkillFilter[]
@@ -840,9 +902,7 @@ export default function App() {
                             type="button"
                             onClick={() => setSkillFilter(tab)}
                             className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                              skillFilter === tab
-                                ? 'bg-white text-slate-950 font-semibold'
-                                : 'text-slate-300 hover:text-white'
+                              skillFilter === tab ? theme.activeSkillTab : theme.textSecondary
                             }`}
                           >
                             {tab}
@@ -858,24 +918,24 @@ export default function App() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.25, delay: idx * 0.025 }}
-                            className="flex flex-col justify-between rounded-xl border border-slate-800/90 bg-[#070B14] p-4"
+                            className={`flex flex-col justify-between rounded-xl border p-4 ${theme.inset}`}
                           >
                             <div>
-                              <p className="text-[11px] font-medium text-sky-400">
+                              <p className={`text-[11px] font-semibold ${theme.accentText}`}>
                                 {skill.category}
                               </p>
-                              <p className="mt-1 text-xs sm:text-sm font-medium leading-relaxed text-slate-100">
+                              <p className={`mt-1 text-xs sm:text-sm font-medium leading-relaxed ${theme.textPrimary}`}>
                                 {skill.name}
                               </p>
                             </div>
-                            <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-800">
+                            <div className={`mt-3 h-1 w-full overflow-hidden rounded-full ${theme.id === 'light' ? 'bg-slate-200' : 'bg-white/10'}`}>
                               <motion.div
                                 initial={{ scaleX: 0 }}
                                 whileInView={{ scaleX: 1 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.6, delay: 0.05 + idx * 0.02 }}
                                 style={{ transformOrigin: 'left' }}
-                                className="h-full w-full bg-gradient-to-r from-sky-500 to-sky-300"
+                                className={`h-full w-full bg-gradient-to-r ${theme.progressGradient}`}
                               />
                             </div>
                           </motion.div>
@@ -894,7 +954,7 @@ export default function App() {
                       whileHover={{ y: -2 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.35 }}
-                      className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6 transition-colors hover:border-slate-700"
+                      className={`rounded-2xl border p-6 transition-colors ${theme.card} ${theme.cardHover}`}
                     >
                       <PostHeader
                         title="Personal Profile, Declaration & Signature"
@@ -902,40 +962,42 @@ export default function App() {
                         icon={<PenTool className="h-4 w-4" />}
                       />
 
-                      <dl className="mt-4 divide-y divide-slate-800/80 text-sm">
+                      <dl className={`mt-4 divide-y text-sm ${theme.divider}`}>
                         {cv.personalProfile.map((field) => (
                           <div
                             key={field.label}
                             className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between"
                           >
-                            <dt className="font-medium text-slate-400">{field.label}</dt>
-                            <dd className="font-medium text-white text-left sm:text-right">
+                            <dt className={`font-medium ${theme.textMuted}`}>{field.label}</dt>
+                            <dd className={`font-medium text-left sm:text-right ${theme.textPrimary}`}>
                               {field.value}
                             </dd>
                           </div>
                         ))}
                       </dl>
 
-                      <div className="mt-5 rounded-xl border border-slate-800/90 bg-[#070B14] p-5">
-                        <h4 className="text-xs font-semibold uppercase tracking-wider text-sky-400">
+                      <div className={`mt-5 rounded-xl border p-5 ${theme.inset}`}>
+                        <h4 className={`text-xs font-semibold uppercase tracking-wider ${theme.accentText}`}>
                           Declaration
                         </h4>
-                        <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                        <p className={`mt-2 text-sm leading-relaxed ${theme.textSecondary}`}>
                           {cv.declaration}
                         </p>
 
-                        <div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-t border-slate-800/80 pt-4">
-                          <span className="text-xs text-slate-400">Date:</span>
+                        <div className={`mt-6 flex flex-wrap items-end justify-between gap-4 border-t pt-4 ${theme.divider}`}>
+                          <span className={`text-xs ${theme.textMuted}`}>Date:</span>
                           <div className="text-center">
                             {cv.signatureUrl && (
                               <img
                                 src={cv.signatureUrl}
                                 alt={`${cv.name} original signature`}
                                 referrerPolicy="no-referrer"
-                                className="mx-auto h-14 max-w-[190px] rounded bg-white p-1.5 object-contain"
+                                className={`mx-auto h-14 max-w-[190px] rounded bg-white p-1.5 object-contain border ${theme.border}`}
                               />
                             )}
-                            <p className="mt-2 text-xs font-semibold text-white">{cv.name}</p>
+                            <p className={`mt-2 text-xs font-semibold ${theme.textPrimary}`}>
+                              {cv.name}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -952,7 +1014,7 @@ export default function App() {
                       whileHover={{ y: -2 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.35 }}
-                      className="rounded-2xl border border-slate-800/90 bg-[#0B111E] p-6 transition-colors hover:border-slate-700"
+                      className={`rounded-2xl border p-6 transition-colors ${theme.card} ${theme.cardHover}`}
                     >
                       <PostHeader
                         title="Contact Me"
@@ -961,17 +1023,17 @@ export default function App() {
                       />
 
                       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                        <div className="rounded-xl border border-slate-800/90 bg-[#070B14] p-4">
+                        <div className={`rounded-xl border p-4 ${theme.inset}`}>
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-medium text-slate-400">Gmail</p>
+                            <p className={`text-xs font-medium ${theme.textMuted}`}>Gmail</p>
                             <button
                               type="button"
                               onClick={() => handleCopy(cv.contact.email, 'email')}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-slate-300 hover:text-white cursor-pointer"
+                              className={`inline-flex items-center gap-1 text-xs font-medium cursor-pointer ${theme.textSecondary}`}
                             >
                               {copiedField === 'email' ? (
                                 <>
-                                  <Check className="h-3.5 w-3.5 text-sky-400" />
+                                  <Check className={`h-3.5 w-3.5 ${theme.accentText}`} />
                                   Copied
                                 </>
                               ) : (
@@ -986,7 +1048,7 @@ export default function App() {
                             href={gmailComposeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-1.5 block truncate text-sm font-semibold text-white underline decoration-sky-400/50 underline-offset-4 hover:text-sky-300"
+                            className={`mt-1.5 block truncate text-sm font-semibold underline underline-offset-4 ${theme.accentLink}`}
                           >
                             {cv.contact.email}
                           </a>
@@ -995,34 +1057,34 @@ export default function App() {
                               href={gmailComposeUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 transition-colors hover:bg-slate-200"
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${theme.primaryBtn}`}
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                               Gmail Compose
                             </a>
                             <a
                               href={`mailto:${cv.contact.email}`}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700/80 bg-[#111A2E] px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-[#17233D]"
+                              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${theme.secondaryBtn}`}
                             >
-                              <Mail className="h-3.5 w-3.5 text-sky-400" />
+                              <Mail className={`h-3.5 w-3.5 ${theme.accentText}`} />
                               Mail App
                             </a>
                           </div>
                         </div>
 
-                        <div className="rounded-xl border border-slate-800/90 bg-[#070B14] p-4">
+                        <div className={`rounded-xl border p-4 ${theme.inset}`}>
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-medium text-slate-400">
+                            <p className={`text-xs font-medium ${theme.textMuted}`}>
                               WhatsApp &amp; Mobile
                             </p>
                             <button
                               type="button"
                               onClick={() => handleCopy(cv.contact.phone, 'phone')}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-slate-300 hover:text-white cursor-pointer"
+                              className={`inline-flex items-center gap-1 text-xs font-medium cursor-pointer ${theme.textSecondary}`}
                             >
                               {copiedField === 'phone' ? (
                                 <>
-                                  <Check className="h-3.5 w-3.5 text-sky-400" />
+                                  <Check className={`h-3.5 w-3.5 ${theme.accentText}`} />
                                   Copied
                                 </>
                               ) : (
@@ -1037,7 +1099,7 @@ export default function App() {
                             href={whatsappUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-1.5 block text-sm font-semibold text-white underline decoration-sky-400/50 underline-offset-4 hover:text-sky-300 tabular-nums"
+                            className={`mt-1.5 block text-sm font-semibold underline underline-offset-4 tabular-nums ${theme.accentLink}`}
                           >
                             {cv.contact.phone}
                           </a>
@@ -1046,16 +1108,16 @@ export default function App() {
                               href={whatsappUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 transition-colors hover:bg-slate-200"
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${theme.primaryBtn}`}
                             >
                               <MessageCircle className="h-3.5 w-3.5" />
                               Open WhatsApp
                             </a>
                             <a
                               href={telHref}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700/80 bg-[#111A2E] px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-[#17233D]"
+                              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${theme.secondaryBtn}`}
                             >
-                              <Phone className="h-3.5 w-3.5 text-sky-400" />
+                              <Phone className={`h-3.5 w-3.5 ${theme.accentText}`} />
                               Call
                             </a>
                           </div>
@@ -1064,14 +1126,16 @@ export default function App() {
 
                       <form
                         onSubmit={handleContactSubmit}
-                        className="mt-5 rounded-xl border border-slate-800/90 bg-[#070B14] p-5"
+                        className={`mt-5 rounded-xl border p-5 ${theme.inset}`}
                       >
-                        <h4 className="text-sm font-bold text-white">Send a Direct Message</h4>
+                        <h4 className={`text-sm font-bold ${theme.textPrimary}`}>
+                          Send a Direct Message
+                        </h4>
                         <div className="mt-4 grid gap-4 sm:grid-cols-2">
                           <div>
                             <label
                               htmlFor="contact-name"
-                              className="block text-xs font-medium text-slate-300"
+                              className={`block text-xs font-medium ${theme.textSecondary}`}
                             >
                               Your Name
                             </label>
@@ -1081,13 +1145,13 @@ export default function App() {
                               value={senderName}
                               onChange={(e) => setSenderName(e.target.value)}
                               placeholder="Enter your full name"
-                              className="mt-1.5 w-full rounded-lg border border-slate-700/80 bg-[#0B111E] px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
+                              className={`mt-1.5 w-full rounded-lg border px-3.5 py-2 text-sm focus:outline-none ${theme.inputField}`}
                             />
                           </div>
                           <div>
                             <label
                               htmlFor="contact-email"
-                              className="block text-xs font-medium text-slate-300"
+                              className={`block text-xs font-medium ${theme.textSecondary}`}
                             >
                               Your Email
                             </label>
@@ -1097,7 +1161,7 @@ export default function App() {
                               value={senderEmail}
                               onChange={(e) => setSenderEmail(e.target.value)}
                               placeholder="you@example.com"
-                              className="mt-1.5 w-full rounded-lg border border-slate-700/80 bg-[#0B111E] px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
+                              className={`mt-1.5 w-full rounded-lg border px-3.5 py-2 text-sm focus:outline-none ${theme.inputField}`}
                             />
                           </div>
                         </div>
@@ -1105,7 +1169,7 @@ export default function App() {
                         <div className="mt-4">
                           <label
                             htmlFor="contact-message"
-                            className="block text-xs font-medium text-slate-300"
+                            className={`block text-xs font-medium ${theme.textSecondary}`}
                           >
                             Message
                           </label>
@@ -1115,12 +1179,12 @@ export default function App() {
                             value={messageText}
                             onChange={(e) => setMessageText(e.target.value)}
                             placeholder="Write your message..."
-                            className="mt-1.5 w-full rounded-lg border border-slate-700/80 bg-[#0B111E] px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
+                            className={`mt-1.5 w-full rounded-lg border px-3.5 py-2 text-sm focus:outline-none ${theme.inputField}`}
                           />
                         </div>
 
                         {formFeedback && (
-                          <p role="status" className="mt-3 text-xs font-medium text-sky-300">
+                          <p role="status" className={`mt-3 text-xs font-medium ${theme.accentText}`}>
                             {formFeedback}
                           </p>
                         )}
@@ -1128,7 +1192,7 @@ export default function App() {
                         <div className="mt-4 flex flex-wrap items-center gap-3">
                           <button
                             type="submit"
-                            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-950 transition-colors hover:bg-slate-200 cursor-pointer"
+                            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${theme.primaryBtn}`}
                           >
                             <Send className="h-4 w-4" />
                             Send via Gmail
@@ -1136,9 +1200,9 @@ export default function App() {
                           <button
                             type="button"
                             onClick={handleSendWhatsApp}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-700/80 bg-[#111A2E] px-4 py-2 text-xs sm:text-sm font-medium text-slate-100 transition-colors hover:bg-[#17233D] cursor-pointer"
+                            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer ${theme.secondaryBtn}`}
                           >
-                            <MessageCircle className="h-4 w-4 text-sky-400" />
+                            <MessageCircle className={`h-4 w-4 ${theme.accentText}`} />
                             Send via WhatsApp
                           </button>
                         </div>
@@ -1151,8 +1215,8 @@ export default function App() {
           </div>
         </main>
 
-        <footer className="border-t border-slate-800/80 bg-[#04070D] py-8">
-          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs text-slate-400 sm:flex-row">
+        <footer className={`border-t py-8 transition-colors duration-300 ${theme.card}`}>
+          <div className={`mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-xs sm:flex-row ${theme.textMuted}`}>
             <p>
               &copy; {new Date().getFullYear()} {cv.name}. All CV information preserved verbatim.
             </p>
@@ -1161,7 +1225,7 @@ export default function App() {
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-300 hover:text-sky-300 transition-colors tabular-nums"
+                className={`transition-colors tabular-nums ${theme.accentLink}`}
               >
                 {cv.contact.phone}
               </a>
@@ -1169,21 +1233,21 @@ export default function App() {
                 href={gmailComposeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-300 hover:text-sky-300 transition-colors"
+                className={`transition-colors ${theme.accentLink}`}
               >
                 {cv.contact.email}
               </a>
               <button
                 type="button"
                 onClick={handleDownloadPdf}
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:underline transition-colors cursor-pointer"
               >
                 Download Original CV PDF
               </button>
               <button
                 type="button"
                 onClick={() => handleOpenModal('print')}
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:underline transition-colors cursor-pointer"
               >
                 Print-Friendly CV
               </button>
@@ -1219,20 +1283,22 @@ export default function App() {
                 exit={{ opacity: 0, scale: 0.96, y: 8 }}
                 transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative max-w-3xl w-full overflow-hidden rounded-2xl border border-slate-700/80 bg-[#0B111E]"
+                className={`relative max-w-3xl w-full overflow-hidden rounded-2xl border ${theme.card}`}
               >
-                <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
-                  <p className="text-sm font-semibold text-white">{lightboxImage.caption}</p>
+                <div className={`flex items-center justify-between border-b px-5 py-3 ${theme.divider}`}>
+                  <p className={`text-sm font-semibold ${theme.textPrimary}`}>
+                    {lightboxImage.caption}
+                  </p>
                   <button
                     type="button"
                     onClick={() => setLightboxImage(null)}
                     aria-label="Close photo preview"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700/80 text-slate-300 hover:bg-white/10 hover:text-white cursor-pointer"
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border cursor-pointer ${theme.ghostBtn}`}
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="flex max-h-[75vh] items-center justify-center bg-[#04070D] p-4">
+                <div className={`flex max-h-[75vh] items-center justify-center p-4 ${theme.inset}`}>
                   <img
                     src={lightboxImage.src}
                     alt={lightboxImage.caption}

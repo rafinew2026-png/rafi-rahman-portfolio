@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import type { PortfolioTheme } from '../theme/palettes';
 
 export type ProfileTab = 'timeline' | 'about' | 'experience' | 'education' | 'skills' | 'contact';
 
 interface NavbarProps {
+  theme: PortfolioTheme;
   onOpenCVModal: (initialTab?: 'pdf' | 'print') => void;
   onSelectNav: (tab: ProfileTab, targetId?: string) => void;
 }
@@ -16,11 +18,11 @@ const navLinks: { label: string; tab: ProfileTab; targetId: string }[] = [
   { label: 'Contact', tab: 'contact', targetId: 'profile-tabs' },
 ];
 
-export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
+export default function Navbar({ theme, onOpenCVModal, onSelectNav }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-slate-800/80 bg-[#070B14]/90 backdrop-blur-md">
+    <header className={`no-print sticky top-0 z-40 border-b backdrop-blur-md transition-colors duration-200 ${theme.navbar}`}>
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-8 px-6 py-3.5">
         <a
           href="#profile-header"
@@ -28,14 +30,14 @@ export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
             e.preventDefault();
             onSelectNav('timeline', 'profile-header');
           }}
-          className="text-lg font-bold tracking-tight text-white whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-400"
+          className={`text-lg font-bold tracking-tight whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 ${theme.textPrimary}`}
         >
           Rafi Rahman
         </a>
 
         <nav
           aria-label="Primary navigation"
-          className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-300"
+          className="hidden md:flex items-center gap-7 text-sm font-medium"
         >
           {navLinks.map((link) => (
             <a
@@ -45,7 +47,7 @@ export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
                 e.preventDefault();
                 onSelectNav(link.tab, link.targetId);
               }}
-              className="whitespace-nowrap shrink-0 transition-colors duration-150 hover:text-sky-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-400"
+              className={`whitespace-nowrap shrink-0 transition-colors duration-150 ${theme.navLink}`}
             >
               {link.label}
             </a>
@@ -56,7 +58,7 @@ export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
           <button
             type="button"
             onClick={() => onOpenCVModal('print')}
-            className="hidden sm:inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-xs font-semibold text-slate-950 transition-colors duration-150 hover:bg-slate-200 whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 cursor-pointer"
+            className={`hidden sm:inline-flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${theme.navCta}`}
           >
             View &amp; Print CV
           </button>
@@ -66,7 +68,7 @@ export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-expanded={mobileOpen}
             aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700/80 text-slate-200 transition-colors hover:bg-white/5 md:hidden cursor-pointer"
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border transition-colors md:hidden cursor-pointer ${theme.ghostBtn}`}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -74,7 +76,7 @@ export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-slate-800/80 bg-[#0B111E] px-6 py-4 md:hidden">
+        <div className={`border-t px-6 py-4 md:hidden ${theme.card}`}>
           <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
             {navLinks.map((link) => (
               <a
@@ -85,7 +87,7 @@ export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
                   setMobileOpen(false);
                   onSelectNav(link.tab, link.targetId);
                 }}
-                className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/5 hover:text-sky-300"
+                className={`rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${theme.navLink}`}
               >
                 {link.label}
               </a>
@@ -96,7 +98,7 @@ export default function Navbar({ onOpenCVModal, onSelectNav }: NavbarProps) {
                 setMobileOpen(false);
                 onOpenCVModal('print');
               }}
-              className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-slate-200 cursor-pointer"
+              className={`mt-2 inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${theme.navCta}`}
             >
               View &amp; Print CV
             </button>
